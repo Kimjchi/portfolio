@@ -2,29 +2,74 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import gsap from 'gsap'
 
+import type { Drawing, Photo } from '@/lib/strapi'
+
 type Mode = 'photos' | 'drawings'
 
-const DATA: Record<Mode, Array<{ direction: 'left' | 'right'; duration: number; seeds: Array<number> }>> = {
+interface RowConfig {
+  direction: 'left' | 'right'
+  duration: number
+}
+
+const ROW_CONFIGS: Record<Mode, Array<RowConfig>> = {
   photos: [
-    { direction: 'left', duration: 40, seeds: [10, 20, 30, 40, 50, 60, 70, 80] },
-    { direction: 'right', duration: 30, seeds: [90, 100, 110, 120, 130, 140, 150, 160] },
-    { direction: 'left', duration: 50, seeds: [170, 180, 190, 200, 210, 220, 230, 240] },
-    { direction: 'right', duration: 35, seeds: [250, 260, 270, 280, 290, 300, 310, 320] },
+    { direction: 'left', duration: 40 },
+    { direction: 'right', duration: 30 },
+    { direction: 'left', duration: 50 },
+    { direction: 'right', duration: 35 },
   ],
   drawings: [
-    { direction: 'left', duration: 38, seeds: [11, 22, 33, 44, 55, 66, 77, 88] },
-    { direction: 'right', duration: 28, seeds: [99, 111, 122, 133, 144, 155, 166, 177] },
-    { direction: 'left', duration: 48, seeds: [188, 199, 211, 222, 233, 244, 255, 266] },
-    { direction: 'right', duration: 33, seeds: [277, 288, 299, 311, 322, 333, 344, 355] },
+    { direction: 'left', duration: 38 },
+    { direction: 'right', duration: 28 },
+    { direction: 'left', duration: 48 },
+    { direction: 'right', duration: 33 },
   ],
 }
 
-export default function PhotosSection() {
+interface RowImage {
+  url: string
+  alt: string
+}
+
+// Tile images until we have at least `min` — enough to fill one screen width
+function tileImages(images: Array<RowImage>, min: number = 8): Array<RowImage> {
+  if (images.length === 0) return []
+  const result: Array<RowImage> = []
+  while (result.length < min) result.push(...images)
+  return result
+}
+
+function buildRows(
+  images: Array<RowImage>,
+  configs: Array<RowConfig>,
+): Array<RowConfig & { images: Array<RowImage> }> {
+  return configs.map((config, i) => {
+    // Offset each row so they show different images at start
+    const offset = Math.floor((images.length / configs.length) * i)
+    const shifted = [...images.slice(offset), ...images.slice(0, offset)]
+    return { ...config, images: tileImages(shifted) }
+  })
+}
+
+interface Props {
+  photos: Array<Photo>
+  drawings: Array<Drawing>
+}
+
+export default function PhotosSection({ photos, drawings }: Props) {
   const [mode, setMode] = useState<Mode>('photos')
   const rowRefs = useRef<Array<HTMLDivElement | null>>([])
   const scrollAnims = useRef<Array<gsap.core.Tween>>([])
   const isAnimating = useRef(false)
   const isFirstRender = useRef(true)
+
+  const photoImages = photos.map(p => ({ url: p.photo.url, alt: p.description ?? '' }))
+  const drawingImages = drawings.map(d => ({ url: d.image.url, alt: d.title }))
+
+  const DATA: Record<Mode, Array<RowConfig & { images: Array<RowImage> }>> = {
+    photos: buildRows(photoImages, ROW_CONFIGS.photos),
+    drawings: buildRows(drawingImages, ROW_CONFIGS.drawings),
+  }
 
   const rows = DATA[mode]
 
@@ -49,7 +94,7 @@ export default function PhotosSection() {
   // Before paint: put right-moving rows at their start position
   useLayoutEffect(() => {
     rowRefs.current.forEach((el, i) => {
-      if (!el || DATA.photos[i].direction !== 'right') return
+      if (!el || ROW_CONFIGS.photos[i].direction !== 'right') return
       gsap.set(el, { xPercent: -50 })
     })
   }, [])
@@ -141,11 +186,11 @@ export default function PhotosSection() {
               }}
               className="flex gap-2 h-full"
             >
-              {[...row.seeds, ...row.seeds].map((seed, imgIndex) => (
+              {[...row.images, ...row.images].map((img, imgIndex) => (
                 <img
                   key={imgIndex}
-                  src={`https://picsum.photos/seed/${seed}/600/400`}
-                  alt=""
+                  src={img.url}
+                  alt={img.alt}
                   className="h-full object-cover shrink-0 w-[300px]"
                 />
               ))}
