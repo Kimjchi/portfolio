@@ -3,6 +3,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 
 import type { Drawing, Photo } from '@/lib/strapi'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 
 type Mode = 'photos' | 'drawings'
 
@@ -56,8 +57,23 @@ interface Props {
   drawings: Array<Drawing>
 }
 
+function preloadImages(urls: Array<string>): Promise<void> {
+  return Promise.all(
+    [...new Set(urls)].map(
+      url =>
+        new Promise<void>(resolve => {
+          const img = new Image()
+          img.onload = () => resolve()
+          img.onerror = () => resolve()
+          img.src = url
+        }),
+    ),
+  ).then(() => {})
+}
+
 export default function PhotosSection({ photos, drawings }: Props) {
   const [mode, setMode] = useState<Mode>('photos')
+  const [isLoading, setIsLoading] = useState(false)
   const rowRefs = useRef<Array<HTMLDivElement | null>>([])
   const scrollAnims = useRef<Array<gsap.core.Tween>>([])
   const isAnimating = useRef(false)
@@ -137,20 +153,31 @@ export default function PhotosSection({ photos, drawings }: Props) {
   const handleToggle = (next: Mode) => {
     if (next === mode || isAnimating.current) return
     isAnimating.current = true
+    setIsLoading(true)
 
     scrollAnims.current.forEach(a => a.kill())
     scrollAnims.current = []
 
     const els = rowRefs.current.filter(Boolean) as Array<HTMLDivElement>
 
-    // Stagger rows out: even rows exit up, odd rows exit down
-    const tl = gsap.timeline({ onComplete: () => setMode(next) })
-    els.forEach((el, i) => {
-      tl.to(
-        el,
-        { yPercent: i % 2 === 0 ? -120 : 120, autoAlpha: 0, duration: 0.45, ease: 'expo.in' },
-        i * 0.07,
-      )
+    // Preload next mode's images in parallel with the exit animation
+    const nextUrls = DATA[next].flatMap(row => row.images.map(img => img.url))
+    const preloadPromise = preloadImages(nextUrls)
+
+    const exitPromise = new Promise<void>(resolve => {
+      const tl = gsap.timeline({ onComplete: resolve })
+      els.forEach((el, i) => {
+        tl.to(
+          el,
+          { yPercent: i % 2 === 0 ? -120 : 120, autoAlpha: 0, duration: 0.45, ease: 'expo.in' },
+          i * 0.07,
+        )
+      })
+    })
+
+    Promise.all([preloadPromise, exitPromise]).then(() => {
+      setIsLoading(false)
+      setMode(next)
     })
   }
 
@@ -161,20 +188,28 @@ export default function PhotosSection({ photos, drawings }: Props) {
           Gallery
         </h2>
 
-        {/* Toggle pill */}
-        <div className="flex border border-white/30 rounded-full p-1 text-xs md:text-sm font-[vcr-jp]">
+        <ToggleGroup
+          type="single"
+          value={mode}
+          onValueChange={(val) => val && handleToggle(val as Mode)}
+          className="border border-white/30 rounded-full p-1 gap-0 text-xs md:text-sm font-[vcr-jp]"
+        >
           {(['photos', 'drawings'] as Array<Mode>).map((m) => (
-            <button
+            <ToggleGroupItem
               key={m}
-              onClick={() => handleToggle(m)}
-              className={`px-3 md:px-5 py-1.5 rounded-full capitalize transition-all duration-300 ${
-                mode === m ? 'bg-white text-black' : 'text-white hover:text-gray-300'
-              }`}
+              value={m}
+              disabled={isLoading}
+              className="px-3 md:px-5 py-1.5 !rounded-full capitalize text-white !bg-transparent data-[state=on]:!bg-white data-[state=on]:!text-black hover:!bg-transparent hover:text-gray-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {m}
-            </button>
+              {isLoading && m === mode ? (
+                <span className="flex items-center gap-1.5">
+                  <span className="size-3 rounded-full border border-current border-t-transparent animate-spin" />
+                  {m}
+                </span>
+              ) : m}
+            </ToggleGroupItem>
           ))}
-        </div>
+        </ToggleGroup>
       </div>
 
       <div className="flex-1 flex flex-col gap-2 pb-4">
