@@ -80,9 +80,11 @@ interface StrapiResponse<T> {
 // ─── Normalizers ─────────────────────────────────────────────────────────────
 
 function normalizeMedia(raw: RawMedia): StrapiMedia {
+  const baseUrl = process.env['STRAPI_URL'] ?? ''
+  const rawUrl = raw.attributes.url
   return {
     id: raw.id,
-    url: raw.attributes.url,
+    url: rawUrl.startsWith('http') ? rawUrl : `${baseUrl}${rawUrl}`,
     alternativeText: raw.attributes.alternativeText,
     width: raw.attributes.width,
     height: raw.attributes.height,

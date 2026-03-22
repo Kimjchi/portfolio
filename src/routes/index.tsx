@@ -7,18 +7,25 @@ import { useEffect } from 'react'
 import AboutSection from '@/components/AboutSection'
 import PhotosSection from '@/components/PhotosSection'
 import ProjectsSection from '@/components/ProjectsSection'
-import { getProjects } from '@/data/strapi.server'
+import { getDrawings, getPhotos, getProjects } from '@/data/strapi.server'
 
 gsap.registerPlugin(ScrambleTextPlugin, SplitText)
 
 export const Route = createFileRoute('/')({
   component: App,
-  loader: () => getProjects(),
+  loader: async () => {
+    const [projects, photos, drawings] = await Promise.all([
+      getProjects(),
+      getPhotos(),
+      getDrawings(),
+    ])
+    return { projects, photos, drawings }
+  },
 })
 
 function App() {
   // const { t } = useTranslation()
-  const projects = Route.useLoaderData()
+  const { projects, photos, drawings } = Route.useLoaderData()
 
   useEffect(() => {
     let split
@@ -131,7 +138,7 @@ function App() {
         </div>
       </div>
       <ProjectsSection projects={projects} />
-      <div id="gallery"><PhotosSection /></div>
+      <div id="gallery"><PhotosSection photos={photos} drawings={drawings} /></div>
       <div id="about"><AboutSection /></div>
     </>
   )
