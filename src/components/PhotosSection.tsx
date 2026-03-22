@@ -95,7 +95,7 @@ export default function PhotosSection({ photos, drawings }: Props) {
   const isAnimating = useRef(false)
   const isFirstRender = useRef(true)
 
-  const photoImages = photos.map(p => ({ url: p.photo.url, alt: p.description ?? '' }))
+  const photoImages = photos.map(p => ({ url: p.photo.url, alt: p.description || '' }))
   const drawingImages = drawings.map(d => ({ url: d.image.url, alt: d.title }))
 
   const DATA: Record<Mode, Array<RowConfig & { images: Array<RowImage> }>> = {
@@ -147,7 +147,7 @@ export default function PhotosSection({ photos, drawings }: Props) {
     rowRefs.current.forEach((el, i) => {
       if (!el) return
       const dir = visibleRows[i]?.direction
-      if (dir) gsap.set(el, { xPercent: dir === 'right' ? -50 : 0, yPercent: 0, autoAlpha: 1 })
+      gsap.set(el, { xPercent: dir === 'right' ? -50 : 0, yPercent: 0, autoAlpha: 1 })
     })
     startScroll(visibleRows)
   }, [rowCount])
@@ -230,7 +230,7 @@ export default function PhotosSection({ photos, drawings }: Props) {
     >
       {/* Close button */}
       <button
-        className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors"
+        className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors cursor-pointer"
         onClick={() => setLightbox(null)}
         aria-label="Close"
       >
@@ -248,11 +248,11 @@ export default function PhotosSection({ photos, drawings }: Props) {
       />
 
       {/* Alt text caption */}
-      {lightbox.alt && (
+      {/* {lightbox.alt && (
         <p className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/60 text-sm font-[vcr-jp] whitespace-nowrap">
           {lightbox.alt}
         </p>
-      )}
+      )} */}
     </div>,
     document.body,
   )
