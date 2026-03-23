@@ -131,6 +131,16 @@ code {
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+@keyframes tooltip-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+@keyframes hint-arrow-wave {
+  0%, 100% { opacity: 0.15; transform: translateX(0); }
+  50%       { opacity: 0.6;  transform: translateX(-6px); }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

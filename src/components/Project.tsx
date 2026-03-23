@@ -46,27 +46,28 @@ export default function Project({ title, description, image, link, index = 0 }: 
 
     let splitDesc: SplitText | null = null
     let hoverTl: gsap.core.Timeline | null = null
+    let fadeOutTween: gsap.core.Tween | null = null
 
     const onEnter = () => {
-      if (!splitDesc) splitDesc = new SplitText(desc, { type: 'words' })
+      if (!splitDesc) splitDesc = new SplitText(desc, { type: 'chars,words' })
       hoverTl?.kill()
+      fadeOutTween?.kill()
       hoverTl = gsap.timeline()
       hoverTl
         .set(desc, { autoAlpha: 1 })
-        .set(splitDesc.words, { autoAlpha: 0, yPercent: 40 })
-        .to(splitDesc.words, {
+        .set(splitDesc.chars, { autoAlpha: 0 })
+        .to(splitDesc.chars, {
           autoAlpha: 1,
-          yPercent: 0,
-          stagger: 0.05,
-          duration: 0.5,
-          ease: 'expo.out',
+          stagger: 0.008,
+          duration: 0.001,
+          ease: 'none',
         })
-        .to(linkEl, { autoAlpha: 1, duration: 0.3, ease: 'expo.out' }, '-=0.2')
+        .to(linkEl, { autoAlpha: 1, duration: 0.3, ease: 'expo.out' }, '-=0.1')
     }
 
     const onLeave = () => {
       hoverTl?.kill()
-      gsap.to([desc, linkEl], { autoAlpha: 0, duration: 0.2 })
+      fadeOutTween = gsap.to([desc, linkEl], { autoAlpha: 0, duration: 0.2 })
     }
 
     container.addEventListener('mouseenter', onEnter)
@@ -76,6 +77,7 @@ export default function Project({ title, description, image, link, index = 0 }: 
       container.removeEventListener('mouseenter', onEnter)
       container.removeEventListener('mouseleave', onLeave)
       hoverTl?.kill()
+      fadeOutTween?.kill()
       splitDesc?.revert()
     }
   }, [])
