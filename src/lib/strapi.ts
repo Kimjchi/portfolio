@@ -28,6 +28,7 @@ export interface Project {
   client: string
   content: string
   screenshots: Array<StrapiMedia>
+  stack: Array<string>
 }
 
 // ─── Raw Strapi v4 response types ────────────────────────────────────────────
@@ -63,6 +64,7 @@ interface RawProjectAttributes {
   client: string
   content: string
   screenshots: RawRelation<Array<RawMedia>>
+  stack: Array<string> | null
 }
 
 interface RawItem<T> {
@@ -116,6 +118,7 @@ function normalizeProject(raw: RawItem<RawProjectAttributes>): Project {
     client: raw.attributes.client,
     content: raw.attributes.content,
     screenshots: (raw.attributes.screenshots.data ?? []).map(normalizeMedia),
+    stack: raw.attributes.stack ?? [],
   }
 }
 
