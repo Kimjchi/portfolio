@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import gsap from 'gsap'
@@ -91,7 +91,7 @@ export default function PhotosSection({ photos, drawings }: Props) {
   const [rowCount, setRowCount] = useState(1)
   const [lightbox, setLightbox] = useState<RowImage | null>(null)
   const rowRefs = useRef<Array<HTMLDivElement | null>>([])
-  const scrollAnims = useRef<Array<gsap.core.Tween>>([])
+  const scrollAnims = useRef<Array<{ kill: () => void }>>([])
   const isAnimating = useRef(false)
   const isFirstRender = useRef(true)
 
@@ -106,31 +106,95 @@ export default function PhotosSection({ photos, drawings }: Props) {
   const rows = DATA[mode]
   const visibleRows = rows.slice(0, rowCount)
 
-  // Kick off the infinite horizontal scroll for each visible row
+  // Kick off the infinite horizontal scroll for each visible row using rAF + scrollLeft
   const startScroll = (rowData: Array<RowConfig & { images: Array<RowImage> }>) => {
     scrollAnims.current.forEach(a => a.kill())
     scrollAnims.current = []
-    rowRefs.current.forEach((el, i) => {
-      if (!el || !rowData[i]) return
+    rowRefs.current.forEach((scrollEl, i) => {
+      if (!scrollEl || !rowData[i]) return
+      const innerEl = scrollEl.firstElementChild as HTMLElement
+      if (!innerEl) return
       const { direction, duration } = rowData[i]
-      scrollAnims.current.push(
-        gsap.to(el, {
-          xPercent: direction === 'left' ? -50 : 0,
-          duration,
-          ease: 'none',
-          repeat: -1,
-        }),
-      )
+      const halfWidth = innerEl.scrollWidth / 2
+      if (halfWidth <= 0) return
+      const speed = halfWidth / duration // px/s
+
+      // Set initial scroll position
+      scrollEl.scrollLeft = direction === 'right' ? halfWidth : 0
+
+      let rafId: number
+      let lastTime: number | null = null
+      let pausedByUser = false
+      let resumeTimer: ReturnType<typeof setTimeout>
+
+      const resumeAnimation = () => {
+        pausedByUser = false
+        lastTime = null
+        rafId = requestAnimationFrame(tick)
+      }
+
+      const pause = () => {
+        if (!pausedByUser) {
+          cancelAnimationFrame(rafId)
+          pausedByUser = true
+        }
+      }
+
+      const handleWheel = (e: WheelEvent) => {
+        // Only react to predominantly horizontal scroll intent
+        if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return
+        pause()
+        clearTimeout(resumeTimer)
+        resumeTimer = setTimeout(resumeAnimation, 1500)
+      }
+
+      const handleTouchStart = () => {
+        pause()
+        clearTimeout(resumeTimer)
+      }
+
+      const handleTouchEnd = () => {
+        clearTimeout(resumeTimer)
+        resumeTimer = setTimeout(resumeAnimation, 2000)
+      }
+
+      scrollEl.addEventListener('wheel', handleWheel, { passive: true })
+      scrollEl.addEventListener('touchstart', handleTouchStart, { passive: true })
+      scrollEl.addEventListener('touchend', handleTouchEnd, { passive: true })
+      scrollEl.addEventListener('touchcancel', handleTouchEnd, { passive: true })
+
+      const tick = (time: number) => {
+        if (pausedByUser) return
+        if (lastTime === null) lastTime = time
+        const delta = time - lastTime
+        lastTime = time
+
+        if (direction === 'left') {
+          scrollEl.scrollLeft += speed * (delta / 1000)
+          if (scrollEl.scrollLeft >= halfWidth) scrollEl.scrollLeft -= halfWidth
+        } else {
+          scrollEl.scrollLeft -= speed * (delta / 1000)
+          if (scrollEl.scrollLeft <= 0) scrollEl.scrollLeft += halfWidth
+        }
+
+        rafId = requestAnimationFrame(tick)
+      }
+
+      rafId = requestAnimationFrame(tick)
+
+      scrollAnims.current.push({
+        kill: () => {
+          cancelAnimationFrame(rafId)
+          clearTimeout(resumeTimer)
+          scrollEl.removeEventListener('wheel', handleWheel)
+          scrollEl.removeEventListener('touchstart', handleTouchStart)
+          scrollEl.removeEventListener('touchend', handleTouchEnd)
+          scrollEl.removeEventListener('touchcancel', handleTouchEnd)
+          pausedByUser = true
+        },
+      })
     })
   }
-
-  // Before paint: set the starting x position for right-moving rows
-  useLayoutEffect(() => {
-    rowRefs.current.forEach((el, i) => {
-      if (!el || visibleRows[i]?.direction !== 'right') return
-      gsap.set(el, { xPercent: -50 })
-    })
-  }, [rowCount])
 
   // Mount: correct the SSR rowCount, start scroll, add resize listener
   useEffect(() => {
@@ -144,10 +208,9 @@ export default function PhotosSection({ photos, drawings }: Props) {
 
   // When rowCount changes (i.e. after mount correction or window resize), restart scroll
   useEffect(() => {
-    rowRefs.current.forEach((el, i) => {
+    rowRefs.current.forEach((el) => {
       if (!el) return
-      const dir = visibleRows[i]?.direction
-      gsap.set(el, { xPercent: dir === 'right' ? -50 : 0, yPercent: 0, autoAlpha: 1 })
+      gsap.set(el, { yPercent: 0, autoAlpha: 1 })
     })
     startScroll(visibleRows)
   }, [rowCount])
@@ -160,10 +223,6 @@ export default function PhotosSection({ photos, drawings }: Props) {
     }
 
     const els = rowRefs.current.filter(Boolean) as Array<HTMLDivElement>
-
-    els.forEach((el, i) => {
-      gsap.set(el, { xPercent: visibleRows[i].direction === 'right' ? -50 : 0 })
-    })
 
     const tl = gsap.timeline({
       onComplete: () => {
@@ -291,13 +350,14 @@ export default function PhotosSection({ photos, drawings }: Props) {
 
       <div className="flex-1 min-h-0 flex flex-col gap-2 pb-4">
         {visibleRows.map((row, rowIndex) => (
-          <div key={rowIndex} className="flex-1 min-h-0 overflow-hidden">
-            <div
-              ref={(el) => {
-                rowRefs.current[rowIndex] = el
-              }}
-              className="flex gap-2 h-full"
-            >
+          <div
+            key={rowIndex}
+            ref={(el) => {
+              rowRefs.current[rowIndex] = el
+            }}
+            className="flex-1 min-h-0 overflow-x-scroll no-scrollbar"
+          >
+            <div className="flex gap-2 h-full">
               {[...row.images, ...row.images].map((img, imgIndex) => (
                 <img
                   key={imgIndex}
