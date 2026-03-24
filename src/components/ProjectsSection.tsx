@@ -12,7 +12,7 @@ gsap.registerPlugin(ScrollTrigger)
 export default function ProjectsSection({ projects }: { projects: Array<ProjectType> }) {
   // ── Refs ──────────────────────────────────────────────────────────────────
   const sectionRef = useRef<HTMLDivElement>(null)
-  const rowsRef = useRef<Array<HTMLElement | null>>([])
+  const rowsRef = useRef<Array<HTMLAnchorElement | null>>([])
 
   // Desktop panel
   const imagesRef = useRef<Array<HTMLDivElement | null>>([])
@@ -157,9 +157,12 @@ export default function ProjectsSection({ projects }: { projects: Array<ProjectT
     }
   }
 
-  const handleRowClick = (i: number) => {
-    if (window.innerWidth < 1024) onMobileTap(i)
-    else window.open(projects[i].url, '_blank', 'noopener,noreferrer')
+  const handleRowClick = (e: React.MouseEvent, i: number) => {
+    if (window.innerWidth < 1024) {
+      e.preventDefault()
+      onMobileTap(i)
+    }
+    // Desktop: let the <a> href handle navigation naturally
   }
 
   const marqueeItems = Array(20).fill(tooltipStack).flat()
@@ -203,12 +206,16 @@ export default function ProjectsSection({ projects }: { projects: Array<ProjectT
           {/* ── Project list ──────────────────────────────────────────────── */}
           <div className="flex-1 min-w-0">
             {projects.map((project, i) => (
-              <div
+              <a
                 key={project.id}
                 ref={(el) => { rowsRef.current[i] = el }}
                 onMouseEnter={() => onEnter(i)}
-                onClick={() => handleRowClick(i)}
-                className="border-t border-white/10 group cursor-pointer"
+                onClick={(e) => handleRowClick(e, i)}
+                href={project.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={project.title}
+                className="border-t border-white/10 group cursor-pointer block"
               >
                 {/* Row header */}
                 <div className="flex items-center gap-5 py-7">
@@ -220,15 +227,9 @@ export default function ProjectsSection({ projects }: { projects: Array<ProjectT
                   </span>
 
                   {/* Desktop: view arrow */}
-                  <a
-                    href={project.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="hidden lg:block text-white/40 text-sm translate-x-3 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 shrink-0"
-                  >
+                  <span className="hidden lg:block text-white/40 text-sm translate-x-3 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 shrink-0">
                     View →
-                  </a>
+                  </span>
 
                   {/* Mobile: expand indicator */}
                   <span
@@ -288,13 +289,13 @@ export default function ProjectsSection({ projects }: { projects: Array<ProjectT
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="text-white text-sm border-b border-white/60 w-fit pb-0.5 hover:text-gray-300 transition-colors"
+                      className="text-white text-sm border-b border-white/60 w-fit pb-0.5 hover:text-gray-300 transition-colors relative z-10"
                     >
                       View project →
                     </a>
                   </div>
                 </div>
-              </div>
+              </a>
             ))}
             <div className="border-t border-white/10" />
           </div>

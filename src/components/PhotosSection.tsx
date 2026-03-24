@@ -15,16 +15,16 @@ interface RowConfig {
 
 const ROW_CONFIGS: Record<Mode, Array<RowConfig>> = {
   photos: [
-    { direction: 'left', duration: 40 },
-    { direction: 'right', duration: 30 },
-    { direction: 'left', duration: 50 },
-    { direction: 'right', duration: 35 },
+    { direction: 'left', duration: 80 },
+    { direction: 'right', duration: 60 },
+    { direction: 'left', duration: 100 },
+    { direction: 'right', duration: 70 },
   ],
   drawings: [
-    { direction: 'left', duration: 38 },
-    { direction: 'right', duration: 28 },
-    { direction: 'left', duration: 48 },
-    { direction: 'right', duration: 33 },
+    { direction: 'left', duration: 76 },
+    { direction: 'right', duration: 56 },
+    { direction: 'left', duration: 96 },
+    { direction: 'right', duration: 66 },
   ],
 }
 

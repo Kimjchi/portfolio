@@ -132,6 +132,7 @@ export function strapiImageUrl(media: StrapiMedia): string {
 async function strapiFetch<TRaw, TNorm>(
   path: string,
   normalize: (raw: RawItem<TRaw>) => TNorm,
+  extraParams = '',
 ): Promise<Array<TNorm>> {
   const baseUrl = process.env['STRAPI_URL']
   const token = process.env['STRAPI_API_TOKEN']
@@ -140,7 +141,7 @@ async function strapiFetch<TRaw, TNorm>(
     throw new Error('STRAPI_URL and STRAPI_API_TOKEN must be set in your .env file')
   }
 
-  const res = await fetch(`${baseUrl}/api/${path}?populate=*`, {
+  const res = await fetch(`${baseUrl}/api/${path}?populate=*${extraParams}`, {
     headers: { Authorization: `Bearer ${token}` },
   })
 
@@ -161,4 +162,7 @@ export const fetchPhotos = () =>
   strapiFetch<RawPhotoAttributes, Photo>('photos', normalizePhoto)
 
 export const fetchProjects = () =>
-  strapiFetch<RawProjectAttributes, Project>('projects', normalizeProject)
+  strapiFetch<RawProjectAttributes, Project>('projects', normalizeProject, '&filters[category][$eq]=work')
+
+export const fetchLabExperiments = () =>
+  strapiFetch<RawProjectAttributes, Project>('projects', normalizeProject, '&filters[category][$eq]=experiment')
