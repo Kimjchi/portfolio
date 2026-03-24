@@ -5,27 +5,29 @@ import { ScrambleTextPlugin } from 'gsap/ScrambleTextPlugin'
 import { SplitText } from 'gsap/SplitText'
 import { useEffect } from 'react'
 import AboutSection from '@/components/AboutSection'
+import LabSection from '@/components/LabSection'
 import PhotosSection from '@/components/PhotosSection'
 import ProjectsSection from '@/components/ProjectsSection'
-import { getDrawings, getPhotos, getProjects } from '@/data/strapi.server'
+import { getDrawings, getLabExperiments, getPhotos, getProjects } from '@/data/strapi.server'
 
 gsap.registerPlugin(ScrambleTextPlugin, SplitText)
 
 export const Route = createFileRoute('/')({
   component: App,
   loader: async () => {
-    const [projects, photos, drawings] = await Promise.all([
+    const [projects, labExperiments, photos, drawings] = await Promise.all([
       getProjects(),
+      getLabExperiments(),
       getPhotos(),
       getDrawings(),
     ])
-    return { projects, photos, drawings }
+    return { projects, labExperiments, photos, drawings }
   },
 })
 
 function App() {
   // const { t } = useTranslation()
-  const { projects, photos, drawings } = Route.useLoaderData()
+  const { projects, labExperiments, photos, drawings } = Route.useLoaderData()
 
   useEffect(() => {
     let split
@@ -122,6 +124,7 @@ function App() {
           <nav className="flex items-center justify-center md:justify-end gap-4 pr-2">
             {[
               { label: 'Works', id: 'works' },
+              { label: 'Lab', id: 'lab' },
               { label: 'Gallery', id: 'gallery' },
               { label: 'About', id: 'about' },
             ].map(({ label, id }) => (
@@ -138,6 +141,7 @@ function App() {
         </div>
       </div>
       <ProjectsSection projects={projects} />
+      <LabSection experiments={labExperiments} />
       <div id="gallery"><PhotosSection photos={photos} drawings={drawings} /></div>
       <div id="about"><AboutSection /></div>
     </>
