@@ -98,7 +98,7 @@ function App() {
 
   return (
     <>
-      <div className="min-h-screen bg-[url('assets/photos/train.jpg')] bg-cover bg-center font-[vcr-jp] flex flex-col items-center">
+      <div className="min-h-screen bg-[url('/train.jpg')] bg-cover bg-center font-[vcr-jp] flex flex-col items-center">
         <h2 className="text-2xl md:text-3xl text-gray-800 font-[vcr-jp] pt-6 max-w-2xl text-center split">
           Freelance fullstack developer from Paris, France with a small passion
           for creative stuff.

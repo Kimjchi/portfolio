@@ -38,6 +38,11 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         rel: 'stylesheet',
         href: appCss,
       },
+      {
+        rel: 'preload',
+        href: '/train.jpg',
+        as: 'image',
+      },
     ],
   }),
 

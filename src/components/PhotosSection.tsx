@@ -364,6 +364,8 @@ export default function PhotosSection({ photos, drawings }: Props) {
                   src={img.url}
                   alt={img.alt}
                   onClick={() => setLightbox(img)}
+                  loading="lazy"
+                  decoding="async"
                   className="h-full object-cover shrink-0 w-[300px] cursor-zoom-in"
                 />
               ))}

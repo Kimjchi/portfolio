@@ -97,7 +97,7 @@ export default function ProjectsSection({ projects }: { projects: Array<ProjectT
       gsap.fromTo(
         img,
         { clipPath: 'inset(100% 0 0% 0)', autoAlpha: 1 },
-        { clipPath: 'inset(0% 0 0% 0)', duration: 0.6, ease: 'expo.out', overwrite: 'auto' },
+        { clipPath: 'inset(0% 0 0% 0)', autoAlpha: 1, duration: 0.6, ease: 'expo.out', overwrite: 'auto' },
       )
     }
 
@@ -252,8 +252,11 @@ export default function ProjectsSection({ projects }: { projects: Array<ProjectT
                       <img
                         src={strapiImageUrl(project.screenshots[0])}
                         alt={project.title}
+                        width={project.screenshots[0]?.width}
+                        height={project.screenshots[0]?.height}
                         className="w-full h-full object-cover object-top"
                         loading="lazy"
+                        decoding="async"
                       />
                     </div>
 
@@ -345,8 +348,11 @@ export default function ProjectsSection({ projects }: { projects: Array<ProjectT
                   <img
                     src={strapiImageUrl(project.screenshots[0])}
                     alt={project.title}
+                    width={project.screenshots[0]?.width}
+                    height={project.screenshots[0]?.height}
                     className="w-full h-full object-cover object-top"
-                    loading="eager"
+                    loading="lazy"
+                    decoding="async"
                   />
                 </div>
               ))}
