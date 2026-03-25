@@ -30,13 +30,63 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: "Jeremy's Kim portfolio",
+        title: 'Jeremy Kim — Fullstack Developer',
+      },
+      {
+        name: 'description',
+        content:
+          'Freelance fullstack developer from Paris, France with a small passion for creative stuff.',
+      },
+      // Open Graph
+      {
+        property: 'og:type',
+        content: 'website',
+      },
+      {
+        property: 'og:url',
+        content: 'https://jeremykim.fr/',
+      },
+      {
+        property: 'og:title',
+        content: 'Jeremy Kim — Fullstack Developer',
+      },
+      {
+        property: 'og:description',
+        content:
+          'Freelance fullstack developer from Paris, France with a small passion for creative stuff.',
+      },
+      {
+        property: 'og:image',
+        content: 'https://jeremykim.fr/og-image.jpg',
+      },
+      // Twitter / X
+      {
+        name: 'twitter:card',
+        content: 'summary_large_image',
+      },
+      {
+        name: 'twitter:title',
+        content: 'Jeremy Kim — Fullstack Developer',
+      },
+      {
+        name: 'twitter:description',
+        content:
+          'Freelance fullstack developer from Paris, France with a small passion for creative stuff.',
+      },
+      {
+        name: 'twitter:image',
+        content: 'https://jeremykim.fr/og-image.jpg',
       },
     ],
     links: [
       {
         rel: 'stylesheet',
         href: appCss,
+      },
+      {
+        rel: 'icon',
+        href: '/favicon.ico',
+        type: 'image/x-icon',
       },
       {
         rel: 'preload',
