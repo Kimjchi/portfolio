@@ -10,6 +10,9 @@ const config = defineConfig({
   server: {
     port: process.env['PORT'] ? parseInt(process.env['PORT']) : 3000,
   },
+  resolve: {
+    dedupe: ['react', 'react-dom'],
+  },
   plugins: [
     devtools(),
     nitro(),

@@ -3,6 +3,7 @@ import {
   Scripts,
   createRootRouteWithContext,
 } from '@tanstack/react-router'
+import { Analytics } from '@vercel/analytics/react'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import { Suspense } from 'react'
@@ -85,8 +86,8 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       },
       {
         rel: 'icon',
-        href: '/favicon.ico',
-        type: 'image/x-icon',
+        href: '/logo.svg',
+        type: 'image/svg+xml',
       },
       {
         rel: 'preload',
@@ -121,6 +122,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           ]}
         />
         <Scripts />
+        <Analytics />
       </body>
     </html>
   )
