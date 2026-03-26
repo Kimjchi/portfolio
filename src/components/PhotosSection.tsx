@@ -15,16 +15,16 @@ interface RowConfig {
 
 const ROW_CONFIGS: Record<Mode, Array<RowConfig>> = {
   photos: [
-    { direction: 'left', duration: 80 },
-    { direction: 'right', duration: 60 },
-    { direction: 'left', duration: 100 },
-    { direction: 'right', duration: 70 },
+    { direction: 'left', duration: 120 },
+    { direction: 'right', duration: 100 },
+    { direction: 'left', duration: 140 },
+    { direction: 'right', duration: 110 },
   ],
   drawings: [
-    { direction: 'left', duration: 76 },
-    { direction: 'right', duration: 56 },
-    { direction: 'left', duration: 96 },
-    { direction: 'right', duration: 66 },
+    { direction: 'left', duration: 116 },
+    { direction: 'right', duration: 96 },
+    { direction: 'left', duration: 136 },
+    { direction: 'right', duration: 106 },
   ],
 }
 
@@ -45,24 +45,23 @@ function buildRows(
   images: Array<RowImage>,
   configs: Array<RowConfig>,
 ): Array<RowConfig & { images: Array<RowImage> }> {
+  // Interleave: row i gets every nth image (0, n, 2n, … for row 0; 1, n+1, … for row 1; etc.)
+  // This ensures no photo appears in more than one row.
   return configs.map((config, i) => {
-    const offset = Math.floor((images.length / configs.length) * i)
-    const shifted = [...images.slice(offset), ...images.slice(0, offset)]
-    return { ...config, images: tileImages(shifted) }
+    const rowImages = images.filter((_, idx) => idx % configs.length === i)
+    return { ...config, images: tileImages(rowImages) }
   })
 }
 
 // How many rows fit comfortably given the viewport height:
 //   < 600px  → 1 big row
-//   < 900px  → 2 rows
-//   ≥ 900px  → 4 rows
+//   ≥ 600px  → 2 rows
 // Returns 1 on the server so SSR and the initial client render match.
 const getRowCount = (): number => {
   if (typeof window === 'undefined') return 1
   const h = window.innerHeight
   if (h < 600) return 1
-  if (h < 900) return 2
-  return 4
+  return 2
 }
 
 interface Props {
@@ -99,8 +98,8 @@ export default function PhotosSection({ photos, drawings }: Props) {
   const drawingImages = drawings.map(d => ({ url: d.image.url, alt: d.title }))
 
   const DATA: Record<Mode, Array<RowConfig & { images: Array<RowImage> }>> = {
-    photos: buildRows(photoImages, ROW_CONFIGS.photos),
-    drawings: buildRows(drawingImages, ROW_CONFIGS.drawings),
+    photos: buildRows(photoImages, ROW_CONFIGS.photos.slice(0, rowCount)),
+    drawings: buildRows(drawingImages, ROW_CONFIGS.drawings.slice(0, rowCount)),
   }
 
   const rows = DATA[mode]
@@ -223,6 +222,15 @@ export default function PhotosSection({ photos, drawings }: Props) {
     }
 
     const els = rowRefs.current.filter(Boolean) as Array<HTMLDivElement>
+
+    // Reset scrollLeft while rows are still invisible (autoAlpha: 0 from exit)
+    els.forEach((el, i) => {
+      const innerEl = el.firstElementChild as HTMLElement
+      if (!innerEl || !visibleRows[i]) return
+      const halfWidth = innerEl.scrollWidth / 2
+      if (halfWidth <= 0) return
+      el.scrollLeft = visibleRows[i].direction === 'right' ? halfWidth : 0
+    })
 
     const tl = gsap.timeline({
       onComplete: () => {
